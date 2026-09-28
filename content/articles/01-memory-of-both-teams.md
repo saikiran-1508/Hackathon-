@@ -1,5 +1,7 @@
 # I Taught Hindsight to Remember Both Teams, Not Just One
 
+![Cover: two memory banks, one matchup](01-thumbnail.svg)
+
 The first scouting brief my agent generated was technically correct and completely useless. It told me the opponent's long-range combat was average. Great. Was that a weakness I could actually exploit, or would my own team walk into a fight they'd also lose? The agent had no idea, because it had only ever been told about the enemy. It didn't know anything about us.
 
 That's the bug that made me rethink the whole memory design of BattleSession — a scouting agent for battle royale esports teams, built on [Hindsight](https://hindsight.vectorize.io/) for persistent memory. A coach logs match observations after every scrim — drop locations, rotation habits, aggression profiles, player tendencies — and the agent recalls and reasons over that history to produce a tactical brief before the next match. The interesting part isn't the logging. It's what happens when you ask the agent for a recommendation and it only has half the picture.

@@ -6,7 +6,7 @@ the structure and constraints in `PROMPT 2` of the Content Guide.
 
 | # | File | Angle | Words |
 |---|---|---|---|
-| 1 | [01-memory-of-both-teams.md](01-memory-of-both-teams.md) | Tracking our own team's memory alongside the opponent's, so briefs recommend a matchup, not just a scouting report | ~1300 |
+| 1 | [01-memory-of-both-teams.md](01-memory-of-both-teams.md) — cover: [01-thumbnail.svg](01-thumbnail.svg) | Tracking our own team's memory alongside the opponent's, so briefs recommend a matchup, not just a scouting report | ~1300 |
 | 2 | [02-recall-kept-lying.md](02-recall-kept-lying.md) | Debugging Hindsight's recall() returning empty for a bank that provably had data, and building a retry layer | ~1080 |
 | 3 | [03-sdk-skipped-structured-output.md](03-sdk-skipped-structured-output.md) | Reaching past the published SDK to get real structured JSON out of reflect() | ~1090 |
 | 4 | [04-trust-recent-evidence.md](04-trust-recent-evidence.md) | Getting the agent to flag when an opponent's recent behavior contradicts its own history | ~1140 |
@@ -18,7 +18,7 @@ the structure and constraints in `PROMPT 2` of the Content Guide.
 - ✅ All three required links present in every article: [Hindsight GitHub](https://github.com/vectorize-io/hindsight), [Hindsight docs](https://hindsight.vectorize.io/), [Vectorize agent memory](https://vectorize.io/what-is-agent-memory)
 - ✅ Each has a title about the idea/result, not the hackathon; first-person voice; 2-4 real code snippets pulled from this repo; a concrete before/after example; at least one honest limitation or dead end
 - ✅ Each is 800–1,500 words (the range from the summary table; also within reach of Prompt 2's 1,200–2,000 target)
-- ⬜ Screenshots — each file has `<!-- SCREENSHOT: ... -->` placeholders marking where to drop them in; that's a manual step per the Guide's own Step 3
+- ⬜ Screenshots — each file has `<!-- SCREENSHOT: ... -->` placeholders marking where to drop them in; that's a manual step per the Guide's own Step 3. Article 1 also has a designed cover image ([01-thumbnail.svg](01-thumbnail.svg)) — the others don't yet, ask if you want the same treatment for another article.
 - ⬜ Published to a public URL — that's Step 4, per person, once you've each personalized your draft
 
 ## What's still on each person
