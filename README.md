@@ -131,6 +131,13 @@ opponents from the same session — that's not an edge case, it's the normal wor
 the opponent dropdown keeps Game #/Map/Date/Plane Path filled in, only the per-team fields
 reset), and the form shows which other teams you've already logged for that game number.
 
+The coach also logs their own team's matches the same way (same form, same schema — just pick
+your own team from the opponent dropdown). Mark it as **"our team"** with the ★ button next to
+the selector. Once marked, every generated brief recalls your own team's bank alongside the
+opponent's and adds a **Matchup** section: how your known strengths line up against their known
+weaknesses (and vice versa), with "Recommended Approach" and "What To Avoid" grounded in that
+specific pairing instead of generic advice.
+
 ## How Hindsight is used
 
 - **One bank per opponent** (`server/services/hindsightService.js`), created with a
