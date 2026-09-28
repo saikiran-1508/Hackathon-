@@ -75,7 +75,7 @@ export default function MatchLogForm({ opponent, onSaved }) {
       });
       setForm(initialForm());
     } catch (err) {
-      setError(err.message);
+      setError(err.detail ? `${err.message} — ${err.detail}` : err.message);
     } finally {
       setSaving(false);
     }

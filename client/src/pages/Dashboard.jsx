@@ -46,8 +46,13 @@ export default function Dashboard() {
   }
 
   async function handleMatchSaved(match) {
-    await api.createMatch(match);
-    await refreshMatches(selected);
+    try {
+      await api.createMatch(match);
+    } finally {
+      // The server saves the match locally before attempting retain(), so even
+      // a 502 (retain failed) means there's a new row worth showing.
+      await refreshMatches(selected);
+    }
   }
 
   async function handleGenerateBrief() {
@@ -58,7 +63,7 @@ export default function Dashboard() {
       const result = await api.getBrief(selected);
       setBriefResult(result);
     } catch (err) {
-      setBriefError(err.message);
+      setBriefError(err.detail ? `${err.message} — ${err.detail}` : err.message);
     } finally {
       setLoadingBrief(false);
     }

@@ -63,11 +63,29 @@ export async function retainMatch(match) {
   return bankId;
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Hindsight Cloud's recall() has been observed to intermittently return zero
+// results for a bank that demonstrably has consolidated memories (confirmed via
+// listMemories showing valid, consolidated entries while recall() returned
+// nothing for the same bank/query seconds apart, with no code change). This
+// retries a genuinely-empty result a couple of times before trusting it, since
+// "empty" is indistinguishable from "still catching up" from the client side.
+async function recallWithRetry(bankId, query, options, attempts = 3, delayMs = 1500) {
+  let last;
+  for (let i = 0; i < attempts; i++) {
+    last = await client.recall(bankId, query, options);
+    if (last.results?.length > 0) return last;
+    if (i < attempts - 1) await sleep(delayMs);
+  }
+  return last;
+}
+
 export async function recallMemories(opponent, query) {
   const bankId = await ensureBank(opponent);
-  return client.recall(bankId, query || `Everything known about ${opponent}`, {
-    budget: 'mid',
-  });
+  return recallWithRetry(bankId, query || `Everything known about ${opponent}`, { budget: 'mid' });
 }
 
 const CONFIDENCE_ENUM = ['Low', 'Medium', 'High', 'Insufficient evidence'];
@@ -188,11 +206,16 @@ async function reflectStructured(bankId, query, schema, budget) {
   }
 }
 
+function looksEmptyDespiteEvidence(brief) {
+  const noStrengths = !brief.strengths?.length;
+  const noWeaknesses = !brief.weaknesses?.length;
+  const noRoles = !brief.playerRoles?.length;
+  return !brief.matchesAnalyzed && noStrengths && noWeaknesses && noRoles;
+}
+
 export async function generateBrief(opponent) {
   const bankId = await ensureBank(opponent);
-  const recall = await client.recall(bankId, `All observed tendencies for ${opponent}`, {
-    budget: 'high',
-  });
+  const recall = await recallWithRetry(bankId, `All observed tendencies for ${opponent}`, { budget: 'high' });
 
   if (!recall.results || recall.results.length === 0) {
     return {
@@ -203,7 +226,15 @@ export async function generateBrief(opponent) {
     };
   }
 
-  const { brief, basedOn } = await reflectStructured(bankId, BRIEF_QUERY(opponent), BRIEF_JSON_SCHEMA, 'high');
+  let { brief, basedOn } = await reflectStructured(bankId, BRIEF_QUERY(opponent), BRIEF_JSON_SCHEMA, 'high');
+
+  // reflect() runs its own internal retrieval separate from the recall() above,
+  // so it can independently hit the same "still catching up" emptiness even
+  // though we just proved this bank has data. One retry is enough in practice.
+  if (looksEmptyDespiteEvidence(brief)) {
+    await sleep(1500);
+    ({ brief, basedOn } = await reflectStructured(bankId, BRIEF_QUERY(opponent), BRIEF_JSON_SCHEMA, 'high'));
+  }
 
   return {
     empty: false,
