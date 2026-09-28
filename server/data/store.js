@@ -1,0 +1,62 @@
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// Plain JSON file, not a database. Hindsight is the real memory/reasoning layer
+// (retain/recall/reflect); this file just caches the exact structured fields a
+// coach typed in, so the UI can show a complete, exact match history table
+// without depending on semantic recall() (which is a similarity search, not a
+// guaranteed "give me everything" listing).
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const DB_PATH = join(__dirname, 'db.json');
+
+function readDb() {
+  if (!existsSync(DB_PATH)) {
+    return { opponents: [], matches: [] };
+  }
+  return JSON.parse(readFileSync(DB_PATH, 'utf-8'));
+}
+
+function writeDb(db) {
+  writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
+}
+
+export function listOpponents() {
+  return readDb().opponents;
+}
+
+export function addOpponent(name) {
+  const db = readDb();
+  const existing = db.opponents.find((o) => o.name.toLowerCase() === name.toLowerCase());
+  if (existing) return existing;
+  const opponent = { id: slugify(name), name };
+  db.opponents.push(opponent);
+  writeDb(db);
+  return opponent;
+}
+
+export function listMatches(opponentName) {
+  const db = readDb();
+  return db.matches
+    .filter((m) => m.opponent.toLowerCase() === opponentName.toLowerCase())
+    .sort((a, b) => a.matchNumber - b.matchNumber);
+}
+
+export function addMatch(match) {
+  const db = readDb();
+  db.matches.push(match);
+  writeDb(db);
+  return match;
+}
+
+export function slugify(name) {
+  return (
+    'opp-' +
+    name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')
+  );
+}
