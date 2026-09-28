@@ -36,32 +36,76 @@ esports-ai-agent/
 └── package.json               root convenience scripts (run both apps together)
 ```
 
-## Setup
+## Getting Started
 
-### 1. Get credentials (you have to do this part — see "Required accounts" below)
-
-Copy the env templates:
+### 1. Clone
 
 ```bash
-cp server/.env.example server/.env
-cp client/.env.example client/.env
+git clone https://github.com/saikiran-1508/Hackathon-.git
+cd Hackathon-
 ```
 
-Fill in `server/.env`:
-- `HINDSIGHT_API_KEY` — from your Hindsight Cloud project (ui.hindsight.vectorize.io)
-- `GROQ_API_KEY` — from console.groq.com (check the Hindsight Cloud dashboard for exactly
-  where it expects this — see the note in `server/config/hindsight.js`)
-
-### 2. Install & run
+### 2. Install everything
 
 ```bash
 npm run install:all
+```
+
+Installs the root tooling, the server, and the client in one command.
+
+### 3. Get credentials (only you can do this — account creation can't be scripted)
+
+1. **Hindsight Cloud** — sign up at https://ui.hindsight.vectorize.io, then in the billing
+   section apply promo code `MEMHACK99` for $50 in free credits, then copy your API key from
+   the dashboard.
+2. **Groq** (free) — sign up at https://console.groq.com for an LLM key; Hindsight uses an
+   LLM under the hood for `reflect()` and fact extraction. Recommended models per the
+   hackathon PDF: `openai/gpt-oss-120b` or `qwen/qwen3-32b`.
+
+### 4. Configure environment files
+
+```bash
+copy server\.env.example server\.env
+copy client\.env.example client\.env
+```
+
+(On macOS/Linux use `cp` instead of `copy`.) `client\.env` needs no edits — it already points
+at `http://localhost:4000`. Open `server\.env` and fill in the two keys from step 3:
+
+```
+HINDSIGHT_API_KEY=hsk_...your key...
+GROQ_API_KEY=gsk_...your key...
+```
+
+Leave `HINDSIGHT_BASE_URL` and `PORT` as they are.
+
+### 5. Run it
+
+```bash
 npm run dev
 ```
 
-This starts the API on `:4000` and the client on `:5173` together.
+Starts the API on `:4000` and the client on `:5173` together in one window.
 
-### 3. Load demo data (optional but recommended for the judging demo)
+**Windows only, if you see `spawn cmd.exe ENOENT`:** that means `concurrently` can't find a
+shell on your machine (a broken `PATH`/`ComSpec`, not a bug in this repo). Skip it and run
+the two servers in separate terminal windows instead:
+
+```bash
+cd server
+npm run dev
+```
+
+```bash
+cd client
+npm run dev
+```
+
+### 6. Open the app
+
+Go to **http://localhost:5173**.
+
+### 7. Load demo data (optional but recommended for the judging demo)
 
 ```bash
 npm run seed
@@ -72,15 +116,20 @@ aggressive-late pattern where an early A-split consistently works; matches 5–7
 adding mid-map control and taking early fights instead — the brief should flag that shift
 instead of repeating the stale advice. This gives you the PDF's requested demo arc for free:
 generate a brief with **no** matches loaded (generic, "insufficient evidence"), then after
-matches 1–4 (confident historical pattern), then after 5–7 (adaptation flagged).
+matches 1–4 (confident historical pattern), then after 5–7 (adaptation flagged). Safe to
+re-run — it's idempotent and won't create duplicates.
 
-## Required accounts (I can't create these for you)
+### 8. Stop it
 
-1. **Hindsight Cloud** — sign up at https://ui.hindsight.vectorize.io, then in the billing
-   section apply promo code `MEMHACK99` for $50 in free credits, then copy your API key.
-2. **Groq** (free) — sign up at https://groq.com/ for an LLM key; Hindsight uses an LLM
-   under the hood for `reflect()` and fact extraction. Recommended models per the hackathon
-   PDF: `openai/gpt-oss-120b` or `qwen/qwen3-32b`.
+`Ctrl+C` in the terminal(s) running `npm run dev`.
+
+### A note on scrims
+
+A scrim game has up to 16 teams (64 players) in it at once, so a coach scouts several
+opponents from the same session — that's not an edge case, it's the normal workflow. Use the
+**Game #** field in the log-match form for this: it's shared across every opponent (switching
+the opponent dropdown keeps Game #/Map/Date/Plane Path filled in, only the per-team fields
+reset), and the form shows which other teams you've already logged for that game number.
 
 ## How Hindsight is used
 
@@ -97,6 +146,13 @@ matches 1–4 (confident historical pattern), then after 5–7 (adaptation flagg
   `response_schema` (called through the SDK's internal client directly, since the published
   `reflect()` wrapper doesn't yet forward that option — see the comment in
   `hindsightService.js`), with a text-parsing fallback if that ever breaks.
+- **Retry logic**: Hindsight Cloud's `recall()` has been observed to intermittently return
+  zero results for a bank that demonstrably has consolidated memories (confirmed by listing
+  memories directly while `recall()` returned nothing for the same bank/query, no code change,
+  seconds apart) — and `reflect()` runs its own separate internal retrieval, so it can
+  independently hit that same emptiness even when our own `recall()` call just succeeded. Both
+  paths retry a suspiciously-empty result before trusting it (see `recallWithRetry` /
+  `looksEmptyDespiteEvidence` in `hindsightService.js`).
 
 ## Why a JSON file and not MongoDB
 
@@ -110,7 +166,8 @@ and adaptations are actually reasoned over.
 ## Deployment
 
 - **Backend**: `render.yaml` is set up as a Render Blueprint (root dir `server`). Set the
-  three secret env vars in the Render dashboard after import.
+  two secret env vars (`HINDSIGHT_API_KEY`, `GROQ_API_KEY`) in the Render dashboard after
+  import.
 - **Frontend**: deploy `client/` to Vercel — when importing the repo, set **Root Directory**
   to `client` (Vite is auto-detected). Set `VITE_API_URL` to your deployed Render URL.
 
@@ -124,4 +181,4 @@ per-claim recency timelines) was trimmed for hackathon scope:
   the kept ones (e.g. "previously successful vs. no-longer-working counters" lives inside
   Recent Adaptation + Recommended Approach rather than being two separate sections).
 
-Flag it if you want any of these restored — happy to add them back.
+These can be extended later without changing the core architecture.
