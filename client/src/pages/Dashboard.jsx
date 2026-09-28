@@ -9,6 +9,7 @@ import MemoryPanel from '../components/MemoryPanel';
 export default function Dashboard() {
   const [opponents, setOpponents] = useState([]);
   const [selected, setSelected] = useState('');
+  const [ourTeam, setOurTeam] = useState(null);
   const [matches, setMatches] = useState([]);
   const [briefResult, setBriefResult] = useState(null);
   const [loadingBrief, setLoadingBrief] = useState(false);
@@ -20,6 +21,11 @@ export default function Dashboard() {
     return list;
   }, []);
 
+  async function handleSetOurTeam(name) {
+    const { ourTeam } = await api.setOurTeam(name);
+    setOurTeam(ourTeam);
+  }
+
   const refreshMatches = useCallback(async (opponent) => {
     if (!opponent) return setMatches([]);
     const list = await api.getMatches(opponent);
@@ -30,6 +36,7 @@ export default function Dashboard() {
     refreshOpponents().then((list) => {
       if (list.length && !selected) setSelected(list[0].name);
     });
+    api.getOurTeam().then(({ ourTeam }) => setOurTeam(ourTeam));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -77,7 +84,14 @@ export default function Dashboard() {
       </header>
 
       <div className="mb-6 rounded-lg border border-slate-800 bg-slate-900/40 p-4">
-        <OpponentSelector opponents={opponents} selected={selected} onSelect={setSelected} onCreate={handleCreateOpponent} />
+        <OpponentSelector
+          opponents={opponents}
+          selected={selected}
+          onSelect={setSelected}
+          onCreate={handleCreateOpponent}
+          ourTeam={ourTeam}
+          onSetOurTeam={handleSetOurTeam}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

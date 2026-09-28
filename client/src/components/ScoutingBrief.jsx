@@ -50,7 +50,7 @@ export default function ScoutingBrief({ result }) {
     );
   }
 
-  const { brief, matchesAnalyzed } = result;
+  const { brief, matchesAnalyzed, ourTeam } = result;
 
   if (brief?.parseError) {
     return <pre className="whitespace-pre-wrap text-sm text-slate-300">{brief.executiveSummary}</pre>;
@@ -59,9 +59,18 @@ export default function ScoutingBrief({ result }) {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-100">Scouting Brief</h2>
+        <h2 className="text-lg font-semibold text-slate-100">
+          Scouting Brief {ourTeam && <span className="font-normal text-slate-400">for {ourTeam}</span>}
+        </h2>
         <span className="text-xs text-slate-500">{matchesAnalyzed} match{matchesAnalyzed === 1 ? '' : 'es'} analyzed</span>
       </div>
+
+      {!ourTeam && (
+        <p className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-300">
+          No team is marked as "our team" yet, so the Matchup section below can't compare this opponent against your
+          own strengths. Mark your team above the log-match form to unlock it.
+        </p>
+      )}
 
       <Section title="Executive Summary">
         <p className="text-sm text-slate-200">{brief.executiveSummary}</p>
@@ -116,6 +125,17 @@ export default function ScoutingBrief({ result }) {
           <p className="text-sm text-sky-100">{brief.recentAdaptation}</p>
         </div>
       </Section>
+
+      {brief.matchup && (
+        <Section title={ourTeam ? `Matchup: ${ourTeam} vs This Opponent` : 'Matchup'}>
+          <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm text-emerald-100">{brief.matchup.summary}</p>
+              <ConfidenceBadge level={brief.matchup.confidence} />
+            </div>
+          </div>
+        </Section>
+      )}
 
       <Section title="Recommended Approach">
         <ul className="list-inside list-disc text-sm text-slate-200">

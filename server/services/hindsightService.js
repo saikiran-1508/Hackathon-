@@ -1,6 +1,6 @@
 import { sdk } from '@vectorize-io/hindsight-client';
 import client from '../config/hindsight.js';
-import { slugify } from '../data/store.js';
+import { slugify, getOurTeam } from '../data/store.js';
 
 const knownBanks = new Set();
 
@@ -149,6 +149,17 @@ const BRIEF_JSON_SCHEMA = {
       },
     },
     recentAdaptation: { type: 'string' },
+    matchup: {
+      type: 'object',
+      description:
+        "How OUR team's own known strengths/weaknesses interact with this opponent's, if our team's " +
+        'profile was provided below. "Insufficient evidence" if no data on our own team was given.',
+      properties: {
+        summary: { type: 'string' },
+        confidence: { type: 'string', enum: CONFIDENCE_ENUM },
+      },
+      required: ['summary', 'confidence'],
+    },
     recommendedApproach: { type: 'array', items: { type: 'string' } },
     whatToAvoid: { type: 'array', items: { type: 'string' } },
   },
@@ -161,17 +172,38 @@ const BRIEF_JSON_SCHEMA = {
     'strengths',
     'weaknesses',
     'recentAdaptation',
+    'matchup',
     'recommendedApproach',
     'whatToAvoid',
   ],
 };
 
-const BRIEF_QUERY = (opponent) =>
-  `Generate a tactical scouting brief for the upcoming match against ${opponent}, covering ` +
-  `landing/drop behavior, zone and rotation behavior, aggression profile, combat profile, ` +
-  `player roles, team fight structure, strengths, weaknesses, recent adaptation, and a ` +
-  `recommended approach. If evidence for a section is thin, say so and mark confidence as ` +
-  `"Insufficient evidence" instead of inventing detail.`;
+const BRIEF_QUERY = (opponent, ourTeamName, ourTeamContext) => {
+  const base =
+    `Generate a tactical scouting brief for the upcoming match against ${opponent}, covering ` +
+    `landing/drop behavior, zone and rotation behavior, aggression profile, combat profile, ` +
+    `player roles, team fight structure, strengths, weaknesses, recent adaptation, and a ` +
+    `recommended approach. If evidence for a section is thin, say so and mark confidence as ` +
+    `"Insufficient evidence" instead of inventing detail.`;
+
+  if (!ourTeamContext) {
+    return (
+      base +
+      ` No data on our own team was available, so set "matchup" to a summary explaining that and ` +
+      `"Insufficient evidence" confidence — do not guess at our own tendencies.`
+    );
+  }
+
+  return (
+    base +
+    `\n\nHere is what is separately known about OUR OWN team, "${ourTeamName}" (not the opponent ` +
+    `you're scouting — this is us): \n${ourTeamContext}\n\nUse this to fill "matchup": explain how ` +
+    `our known strengths line up against ${opponent}'s known weaknesses, and where ${opponent}'s ` +
+    `strengths threaten our own known weaknesses. Then make "recommendedApproach" and "whatToAvoid" ` +
+    `concrete recommendations FOR "${ourTeamName}" that exploit this specific matchup, grounded in ` +
+    `both teams' evidence, not generic advice.`
+  );
+};
 
 // The published reflect() wrapper doesn't forward response_schema (only
 // query/context/budget/tags), but the underlying REST endpoint supports it and
@@ -213,6 +245,25 @@ function looksEmptyDespiteEvidence(brief) {
   return !brief.matchesAnalyzed && noStrengths && noWeaknesses && noRoles;
 }
 
+async function getOurTeamContext(opponent) {
+  const ourTeam = getOurTeam();
+  if (!ourTeam || ourTeam.toLowerCase() === opponent.toLowerCase()) return { ourTeam: null, context: null };
+
+  const bankId = await ensureBank(ourTeam);
+  const recall = await recallWithRetry(
+    bankId,
+    `Our own team's strengths, weaknesses, combat profile, aggression profile, and playstyle`,
+    { budget: 'mid' }
+  );
+  if (!recall.results?.length) return { ourTeam, context: null };
+
+  const context = recall.results
+    .slice(0, 30)
+    .map((r) => `- ${r.text}`)
+    .join('\n');
+  return { ourTeam, context };
+}
+
 export async function generateBrief(opponent) {
   const bankId = await ensureBank(opponent);
   const recall = await recallWithRetry(bankId, `All observed tendencies for ${opponent}`, { budget: 'high' });
@@ -226,20 +277,24 @@ export async function generateBrief(opponent) {
     };
   }
 
-  let { brief, basedOn } = await reflectStructured(bankId, BRIEF_QUERY(opponent), BRIEF_JSON_SCHEMA, 'high');
+  const { ourTeam, context: ourTeamContext } = await getOurTeamContext(opponent);
+  const query = BRIEF_QUERY(opponent, ourTeam, ourTeamContext);
+
+  let { brief, basedOn } = await reflectStructured(bankId, query, BRIEF_JSON_SCHEMA, 'high');
 
   // reflect() runs its own internal retrieval separate from the recall() above,
   // so it can independently hit the same "still catching up" emptiness even
   // though we just proved this bank has data. One retry is enough in practice.
   if (looksEmptyDespiteEvidence(brief)) {
     await sleep(1500);
-    ({ brief, basedOn } = await reflectStructured(bankId, BRIEF_QUERY(opponent), BRIEF_JSON_SCHEMA, 'high'));
+    ({ brief, basedOn } = await reflectStructured(bankId, query, BRIEF_JSON_SCHEMA, 'high'));
   }
 
   return {
     empty: false,
     matchesAnalyzed: brief.matchesAnalyzed ?? countDistinctMatches(recall.results),
     memoriesUsed: recall.results.map((r) => ({ text: r.text, metadata: r.metadata })),
+    ourTeam,
     basedOn,
     brief,
   };

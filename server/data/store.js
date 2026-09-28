@@ -13,9 +13,11 @@ const DB_PATH = join(__dirname, 'db.json');
 
 function readDb() {
   if (!existsSync(DB_PATH)) {
-    return { opponents: [], matches: [] };
+    return { opponents: [], matches: [], ourTeam: null };
   }
-  return JSON.parse(readFileSync(DB_PATH, 'utf-8'));
+  const db = JSON.parse(readFileSync(DB_PATH, 'utf-8'));
+  if (db.ourTeam === undefined) db.ourTeam = null;
+  return db;
 }
 
 function writeDb(db) {
@@ -34,6 +36,25 @@ export function addOpponent(name) {
   db.opponents.push(opponent);
   writeDb(db);
   return opponent;
+}
+
+// "Our team" is logged with the exact same form/schema as any opponent (a
+// coach watching a scrim logs both how the other 15 teams played AND how
+// their own team played) — this just remembers which tracked team that is,
+// so brief generation can pull in our own tendencies alongside the
+// opponent's to produce a matchup-aware recommendation instead of scouting
+// the opponent in a vacuum.
+export function getOurTeam() {
+  return readDb().ourTeam;
+}
+
+export function setOurTeam(name) {
+  const db = readDb();
+  const opponent = db.opponents.find((o) => o.name.toLowerCase() === name.toLowerCase());
+  if (!opponent) throw new Error(`Unknown team "${name}" — add it first.`);
+  db.ourTeam = opponent.name;
+  writeDb(db);
+  return opponent.name;
 }
 
 export function listMatches(opponentName) {
