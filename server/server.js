@@ -7,7 +7,10 @@ import scoutingRoutes from './routes/scoutingRoutes.js';
 
 const app = express();
 
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
+// No auth or sensitive data on this API (scouting notes only), so allow any
+// origin rather than requiring Render's CLIENT_ORIGIN to be set to the exact
+// deployed frontend URL before it can be reached.
+app.use(cors());
 app.use(express.json());
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
