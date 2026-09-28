@@ -1,0 +1,13 @@
+I almost added MongoDB to a project already using a real memory system. Then I noticed the two were answering completely different questions.
+
+Building a scouting agent on Hindsight, I needed exact match records for a UI table — recall() is semantic search, not a guaranteed complete listing. It can return 5 of 7 matches and be working exactly as designed.
+
+Before: force a similarity search to answer an exact question.
+After: a flat cache for what was literally typed, Hindsight for everything that requires reasoning. Neither replaces the other.
+
+Not every "I need to persist this" is a database problem. Some of it is just a table.
+
+Repo: github.com/saikiran-1508/Hackathon-
+Article: [ARTICLE LINK]
+
+#AIAgents #Hindsight #AgentMemory #AI

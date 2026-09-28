@@ -1,0 +1,13 @@
+Four matches in a row, an opponent played the same way. Match five, they didn't. Most memory systems would've kept repeating the old advice anyway.
+
+I built a scouting agent on Hindsight where each memory bank carries a mission: weight recent evidence over old patterns when they contradict, and never call a tendency "settled" from one match.
+
+Before: "Their counter works, confidence high" — based on stale data.
+After: "Historically passive early, but the last two matches show a shift. Don't trust the August playbook."
+
+That's not a longer context window. That's the agent noticing the present disagrees with the past.
+
+Repo: github.com/saikiran-1508/Hackathon-
+Article: [ARTICLE LINK]
+
+#AIAgents #Hindsight #AgentMemory #AI

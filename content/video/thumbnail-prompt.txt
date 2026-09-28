@@ -1,0 +1,11 @@
+Generate a viral thumbnail for this YouTube video. Make the thumbnail attention grabbing and something that people scrolling would want to click on if they see it. The aspect ratio needs to be 16:9
+
+Here is the video script:
+
+Intro: This is BattleSense, a scouting agent for esports coaches built on Hindsight persistent memory. A battle royale scrim has sixteen teams at once, so a coach scouts several opponents from one session, plus their own team.
+
+Problem: Asked for a brief on an unscouted team, the agent says there isn't enough evidence yet instead of guessing.
+
+Demo: Seven real scrims logged against one opponent. Generating a brief shows the agent detecting that the opponent changed strategy between early and recent matches, flagging the shift instead of repeating stale advice. It also reasons across two memory banks at once -- our own team's strengths and the opponent's weaknesses -- to recommend a specific matchup-based approach, not generic advice.
+
+Takeaway: Good scouting is refusing to trust stale evidence -- which maps naturally onto an agent reasoning over persistent memory instead of just fetching it.

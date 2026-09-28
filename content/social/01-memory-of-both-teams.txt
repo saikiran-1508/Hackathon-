@@ -1,0 +1,13 @@
+Most scouting reports tell you the opponent's weakness. Mine used to stop there — useless if you don't know whether your own team can exploit it.
+
+I built an esports scouting agent on Hindsight persistent memory. It tracks the opponent AND our own team, same schema, two memory banks.
+
+Before: "They're weak at long range." So what?
+After: "Our long-range beats their close-range — but their early aggression hits our own weak spot."
+
+That second line only exists because the agent reasoned across two banks at once, not one in isolation.
+
+Repo: github.com/saikiran-1508/Hackathon-
+Article: [ARTICLE LINK]
+
+#AIAgents #Hindsight #AgentMemory #AI

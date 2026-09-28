@@ -1,0 +1,13 @@
+The SDK's reflect() couldn't return structured JSON. The REST API underneath it clearly could. So I read the compiled JS instead of waiting for a release.
+
+Building a scouting agent on Hindsight, I needed real typed fields for the UI, not prose to regex apart. The published wrapper dropped response_schema on the floor. The underlying client didn't.
+
+Before: parse JSON out of a text blob and hope.
+After: call the SDK's own internal client with the real schema field, with a text-based fallback if it ever breaks.
+
+A private field in a compiled package is a suggestion, not a guarantee — reach past it carefully, and always keep a fallback.
+
+Repo: github.com/saikiran-1508/Hackathon-
+Article: [ARTICLE LINK]
+
+#AIAgents #Hindsight #AgentMemory #AI
