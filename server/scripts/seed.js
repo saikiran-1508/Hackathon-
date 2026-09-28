@@ -134,7 +134,12 @@ const matches = [
 
 async function main() {
   store.addOpponent(OPPONENT);
+  const existingNumbers = new Set(store.listMatches(OPPONENT).map((m) => m.matchNumber));
   for (const m of matches) {
+    if (existingNumbers.has(m.matchNumber)) {
+      console.log(`Match ${m.matchNumber} already seeded, skipping.`);
+      continue;
+    }
     const match = { id: uuid(), opponent: OPPONENT, createdAt: new Date().toISOString(), ...m };
     store.addMatch(match);
     await retainMatch(match);
