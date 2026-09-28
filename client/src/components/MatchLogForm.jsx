@@ -1,12 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { api } from '../api/client';
 
 const EMPTY_PLAYER = { name: '', role: '', notes: '' };
 
-const initialForm = () => ({
+// A scrim has up to 16 teams (64 players) in the same game, so a coach scouts
+// several opponents from one session. gameNumber/map/date/planePath describe
+// the shared session, not any single opponent, so they're kept separate from
+// the per-team fields that DO reset between saves.
+const initialGameInfo = () => ({
+  gameNumber: '',
   map: '',
   date: new Date().toISOString().slice(0, 10),
-  result: 'Win',
   planePath: '',
+  result: 'Win',
+});
+
+const initialTeamForm = () => ({
   drop: { primary: '', secondary: '', splitLanding: false, contests: false },
   rotation: { firstRotation: '', preferredRoute: '', zonePreference: '' },
   aggression: { early: 'Medium', mid: 'Medium', late: 'Medium' },
@@ -31,9 +40,34 @@ const inputClass =
   'rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm placeholder:text-slate-500 focus:border-sky-500 focus:outline-none';
 
 export default function MatchLogForm({ opponent, onSaved }) {
-  const [form, setForm] = useState(initialForm());
+  const [gameInfo, setGameInfo] = useState(initialGameInfo());
+  const [form, setForm] = useState(initialTeamForm());
+  const [opponentsInGame, setOpponentsInGame] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    api
+      .getNextGame()
+      .then(({ gameNumber, opponentsLogged }) => {
+        setGameInfo((prev) => ({ ...prev, gameNumber: String(gameNumber) }));
+        setOpponentsInGame(opponentsLogged);
+      })
+      .catch(() => {});
+  }, []);
+
+  const refreshOpponentsInGame = useCallback((gameNumber) => {
+    const n = Number(gameNumber);
+    if (!n) return;
+    api
+      .getGame(n)
+      .then(({ opponentsLogged }) => setOpponentsInGame(opponentsLogged))
+      .catch(() => {});
+  }, []);
+
+  function setGame(key, value) {
+    setGameInfo((prev) => ({ ...prev, [key]: value }));
+  }
 
   function set(path, value) {
     setForm((prev) => {
@@ -70,10 +104,19 @@ export default function MatchLogForm({ opponent, onSaved }) {
     try {
       await onSaved({
         opponent,
+        matchNumber: Number(gameInfo.gameNumber) || undefined,
+        map: gameInfo.map,
+        date: gameInfo.date,
+        planePath: gameInfo.planePath,
+        result: gameInfo.result,
         ...form,
         players: form.players.filter((p) => p.name.trim()),
       });
-      setForm(initialForm());
+      // Same scrim, next team: keep the game-level fields (game #, map, date,
+      // plane path) so the coach can immediately log the next opponent from
+      // this same session without retyping them. Only the per-team fields reset.
+      setForm(initialTeamForm());
+      refreshOpponentsInGame(gameInfo.gameNumber);
     } catch (err) {
       setError(err.detail ? `${err.message} — ${err.detail}` : err.message);
     } finally {
@@ -87,27 +130,48 @@ export default function MatchLogForm({ opponent, onSaved }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Field label="Map">
-          <input className={inputClass} value={form.map} onChange={(e) => set('map', e.target.value)} required />
-        </Field>
-        <Field label="Date">
-          <input type="date" className={inputClass} value={form.date} onChange={(e) => set('date', e.target.value)} />
-        </Field>
-        <Field label="Result">
-          <select className={inputClass} value={form.result} onChange={(e) => set('result', e.target.value)}>
-            <option>Win</option>
-            <option>Loss</option>
-          </select>
-        </Field>
-        <Field label="Plane Path">
-          <input
-            className={inputClass}
-            placeholder="e.g. SW -> NE"
-            value={form.planePath}
-            onChange={(e) => set('planePath', e.target.value)}
-          />
-        </Field>
+      <section>
+        <h3 className="mb-2 text-sm font-semibold text-slate-300">
+          Scrim Game <span className="font-normal text-slate-500">— shared by every team you log from this session</span>
+        </h3>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <Field label="Game #">
+            <input
+              type="number"
+              min="1"
+              className={inputClass}
+              value={gameInfo.gameNumber}
+              onChange={(e) => setGame('gameNumber', e.target.value)}
+              onBlur={(e) => refreshOpponentsInGame(e.target.value)}
+              required
+            />
+          </Field>
+          <Field label="Map">
+            <input className={inputClass} value={gameInfo.map} onChange={(e) => setGame('map', e.target.value)} required />
+          </Field>
+          <Field label="Date">
+            <input type="date" className={inputClass} value={gameInfo.date} onChange={(e) => setGame('date', e.target.value)} />
+          </Field>
+          <Field label="Our Result">
+            <select className={inputClass} value={gameInfo.result} onChange={(e) => setGame('result', e.target.value)}>
+              <option>Win</option>
+              <option>Loss</option>
+            </select>
+          </Field>
+          <Field label="Plane Path">
+            <input
+              className={inputClass}
+              placeholder="e.g. SW -> NE"
+              value={gameInfo.planePath}
+              onChange={(e) => setGame('planePath', e.target.value)}
+            />
+          </Field>
+        </div>
+        {opponentsInGame.length > 0 && (
+          <p className="mt-2 text-xs text-slate-500">
+            Already scouted in this game: {opponentsInGame.filter((o) => o !== opponent).join(', ') || '(only this team so far)'}
+          </p>
+        )}
       </section>
 
       <section>

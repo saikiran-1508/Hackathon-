@@ -50,6 +50,23 @@ export function addMatch(match) {
   return match;
 }
 
+// A scrim game has up to 16 teams (64 players) in it at once, so the same
+// game number is shared across every opponent the coach logs from that
+// session — it is NOT per-opponent. This looks at every match across every
+// opponent to suggest the next one.
+export function nextGameNumber() {
+  const db = readDb();
+  const max = db.matches.reduce((m, match) => Math.max(m, match.matchNumber || 0), 0);
+  return max + 1;
+}
+
+// Every opponent already logged under a given game number, so a coach can see
+// which of the up-to-16 teams in that scrim they've scouted so far.
+export function listOpponentsInGame(gameNumber) {
+  const db = readDb();
+  return [...new Set(db.matches.filter((m) => m.matchNumber === gameNumber).map((m) => m.opponent))];
+}
+
 export function slugify(name) {
   return (
     'opp-' +

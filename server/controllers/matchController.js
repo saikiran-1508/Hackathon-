@@ -7,6 +7,16 @@ export async function getMatches(req, res) {
   res.json(store.listMatches(opponent));
 }
 
+export async function getNextGame(req, res) {
+  const gameNumber = store.nextGameNumber();
+  res.json({ gameNumber, opponentsLogged: store.listOpponentsInGame(gameNumber) });
+}
+
+export async function getGame(req, res) {
+  const gameNumber = Number(req.params.gameNumber);
+  res.json({ gameNumber, opponentsLogged: store.listOpponentsInGame(gameNumber) });
+}
+
 export async function createMatch(req, res) {
   const body = req.body;
   if (!body.opponent || !body.map || !body.result) {
@@ -14,13 +24,12 @@ export async function createMatch(req, res) {
   }
 
   store.addOpponent(body.opponent);
-  const existingMatches = store.listMatches(body.opponent);
 
   const match = {
     id: uuid(),
     opponent: body.opponent,
     map: body.map,
-    matchNumber: body.matchNumber || existingMatches.length + 1,
+    matchNumber: body.matchNumber || store.nextGameNumber(),
     date: body.date || new Date().toISOString().slice(0, 10),
     result: body.result,
     planePath: body.planePath || '',
